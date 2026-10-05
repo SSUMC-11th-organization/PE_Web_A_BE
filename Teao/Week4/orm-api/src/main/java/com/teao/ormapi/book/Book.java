@@ -24,6 +24,7 @@ public class Book {
     @Column(name = "book_id")
     private Long bookId;
 
+    // category_id FK를 객체 관계로 연결한다.
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;

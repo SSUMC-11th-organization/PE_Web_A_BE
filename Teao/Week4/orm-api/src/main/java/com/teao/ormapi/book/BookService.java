@@ -22,6 +22,7 @@ public class BookService {
 
     @Transactional
     public BookResponse createBook(CreateBookRequest request) {
+        // 없는 카테고리는 저장 전에 예외로 처리한다.
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 카테고리입니다."));
 
