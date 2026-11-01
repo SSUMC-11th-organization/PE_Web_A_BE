@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>CORS 테스트</title>
+</head>
+<body>
+  <h1>CORS 테스트</h1>
+  <button id="btn">닉네임 중복 체크 호출</button>
+  <pre id="result">버튼을 눌러보세요.</pre>
+
+  <script>
+    const API_URL = "http://localhost:8080/members/nickname/noco";
+
+    document.getElementById("btn").addEventListener("click", async () => {
+      const result = document.getElementById("result");
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        // CORS에 막히면 브라우저는 응답 내용을 숨기고 TypeError만 던집니다.
+        // 자세한 원인은 개발자 도구(F12) Console 탭에서 확인하세요.
+        result.textContent = "요청 실패: " + e.message;
+      }
+    });
+  </script>
+</body>
+</html>
