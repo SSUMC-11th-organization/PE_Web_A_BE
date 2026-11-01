@@ -1,0 +1,6 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# 개인 스터디 노트
+jun/Week5/studynote.md
