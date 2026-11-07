@@ -2,6 +2,7 @@ package com.umc.movie.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -28,4 +29,22 @@ public class Rating extends BaseTimeEntity {
 
     @Column(columnDefinition = "TEXT")
     private String comment;
+
+    @Builder
+    public Rating(Member member, Long movieId, Integer score, String comment) {
+        this.member = member;
+        this.movieId = movieId;
+        this.score = score;
+        this.comment = comment;
+    }
+
+    /** 영속 상태에서 값만 바꾸면 트랜잭션 커밋 시 JPA가 UPDATE를 실행한다 (변경 감지). */
+    public void update(Integer score, String comment) {
+        this.score = score;
+        this.comment = comment;
+    }
+
+    public boolean isWrittenBy(Long memberId) {
+        return member.getMemberId().equals(memberId);
+    }
 }

@@ -7,3 +7,7 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  jackson:
+    deserialization:
+      # 기본값(true)이면 "score": 3.5 가 3으로 잘려 통과한다. 소수는 400으로 거절한다.
+      accept-float-as-int: false
