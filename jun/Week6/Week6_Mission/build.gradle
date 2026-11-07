@@ -35,4 +35,14 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	// Windows에서 임시 폴더 경로에 한글이 있으면 Mockito가 에이전트 jar를 붙이지 못해 모든 mock 생성이 실패한다.
+	// (InstrumentationImpl.appendToBootstrapClassLoaderSearch → IllegalArgumentException)
+	// 그런 환경에서만 테스트 JVM의 임시 폴더를 ASCII 경로로 바꾼다.
+	def tmpDir = System.getProperty('java.io.tmpdir')
+	if (!tmpDir.matches('\\p{ASCII}*')) {
+		def asciiTmp = file("${System.getenv('SystemDrive') ?: 'C:'}/Temp/gradle-test-tmp")
+		doFirst { asciiTmp.mkdirs() }
+		systemProperty 'java.io.tmpdir', asciiTmp.absolutePath
+	}
 }
