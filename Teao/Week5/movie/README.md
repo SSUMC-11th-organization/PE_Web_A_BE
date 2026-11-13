@@ -8,9 +8,12 @@
 | 이메일 중복 확인 | GET | `/members/email/{email}` |
 | 회원별 평점 조회 | GET | `/members/{memberId}/ratings` |
 | 회원가입 | POST | `/members` |
-| 평점 등록 | POST | `/members/{memberId}/ratings` |
-| 평점 수정 | PATCH | `/members/{memberId}/ratings/{ratingId}` |
-| 평점 삭제 | DELETE | `/members/{memberId}/ratings/{ratingId}` |
+| 로그인 | POST | `/auth/login` |
+| 내 정보 조회 | GET | `/members/me` |
+| 내 정보 수정 | PATCH | `/members/me` |
+| 평점 등록 | POST | `/ratings` |
+| 평점 수정 | PATCH | `/ratings/{ratingId}` |
+| 평점 삭제 | DELETE | `/ratings/{ratingId}` |
 
 ## 실행
 
@@ -22,3 +25,5 @@
 Postman에서는 `postman/week5-movie-api.postman_collection.json` 가져오기 후 요청 실행
 
 6주차 저장 API는 `postman/week6-movie-api.postman_collection.json` 가져오기 후 순서대로 실행
+
+7주차 JWT 인증 API는 `postman/week7-auth-api.postman_collection.json` 가져오기 후 순서대로 실행
