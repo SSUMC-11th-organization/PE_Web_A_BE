@@ -7,6 +7,10 @@
 | 닉네임 중복 확인 | GET | `/members/nickname/{nickname}` |
 | 이메일 중복 확인 | GET | `/members/email/{email}` |
 | 회원별 평점 조회 | GET | `/members/{memberId}/ratings` |
+| 회원가입 | POST | `/members` |
+| 평점 등록 | POST | `/members/{memberId}/ratings` |
+| 평점 수정 | PATCH | `/members/{memberId}/ratings/{ratingId}` |
+| 평점 삭제 | DELETE | `/members/{memberId}/ratings/{ratingId}` |
 
 ## 실행
 
@@ -16,3 +20,5 @@
 4. `python -m http.server 5173 --directory mock-frontend` 실행
 
 Postman에서는 `postman/week5-movie-api.postman_collection.json` 가져오기 후 요청 실행
+
+6주차 저장 API는 `postman/week6-movie-api.postman_collection.json` 가져오기 후 순서대로 실행
