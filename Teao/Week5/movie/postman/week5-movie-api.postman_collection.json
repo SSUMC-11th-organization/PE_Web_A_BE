@@ -1,0 +1,46 @@
+{
+  "info": {
+    "name": "5주차 영화 평점 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "닉네임 중복 확인",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/nickname/%EC%88%98%ED%98%84"
+      }
+    },
+    {
+      "name": "이메일 중복 확인",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/email/noco%40umc.com"
+      }
+    },
+    {
+      "name": "회원별 평점 조회",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/1/ratings"
+      }
+    },
+    {
+      "name": "없는 회원 평점 조회",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/999/ratings"
+      }
+    }
+  ]
+}

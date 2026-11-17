@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>영화 평점 API 확인</title>
+    <style>
+      body { max-width: 720px; margin: 40px auto; font-family: sans-serif; }
+      section { margin-bottom: 24px; }
+      input, button { padding: 8px; }
+      pre { min-height: 48px; padding: 16px; background: #f4f4f4; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>영화 평점 API 확인</h1>
+
+    <section>
+      <input id="nickname" value="수현" />
+      <button onclick="checkNickname()">닉네임 확인</button>
+    </section>
+
+    <section>
+      <input id="email" value="noco@umc.com" />
+      <button onclick="checkEmail()">이메일 확인</button>
+    </section>
+
+    <section>
+      <input id="memberId" type="number" value="1" />
+      <button onclick="getRatings()">평점 조회</button>
+    </section>
+
+    <pre id="result">버튼을 눌러 API 응답 확인</pre>
+
+    <script>
+      const API_BASE_URL = "http://localhost:8080";
+      const result = document.querySelector("#result");
+
+      async function request(path) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${path}`);
+          const data = await response.json();
+          result.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.textContent = `요청 실패: ${error.message}`;
+        }
+      }
+
+      function checkNickname() {
+        const nickname = encodeURIComponent(document.querySelector("#nickname").value);
+        return request(`/members/nickname/${nickname}`);
+      }
+
+      function checkEmail() {
+        const email = encodeURIComponent(document.querySelector("#email").value);
+        return request(`/members/email/${email}`);
+      }
+
+      function getRatings() {
+        const memberId = document.querySelector("#memberId").value;
+        return request(`/members/${memberId}/ratings`);
+      }
+    </script>
+  </body>
+</html>

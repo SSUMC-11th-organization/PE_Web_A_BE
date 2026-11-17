@@ -1,0 +1,182 @@
+{
+  "info": {
+    "name": "7주차 JWT 인증 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "emailA", "value": "" },
+    { "key": "emailB", "value": "" },
+    { "key": "nicknameA", "value": "" },
+    { "key": "nicknameB", "value": "" },
+    { "key": "tokenA", "value": "" },
+    { "key": "tokenB", "value": "" },
+    { "key": "movieId", "value": "" },
+    { "key": "ratingId", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "if (!pm.collectionVariables.get('emailA')) {",
+          "  const suffix = Date.now().toString().slice(-7);",
+          "  pm.collectionVariables.set('emailA', `week7-a-${suffix}@umc.com`);",
+          "  pm.collectionVariables.set('emailB', `week7-b-${suffix}@umc.com`);",
+          "  pm.collectionVariables.set('nicknameA', `인증A${suffix.slice(-5)}`);",
+          "  pm.collectionVariables.set('nicknameB', `인증B${suffix.slice(-5)}`);",
+          "  pm.collectionVariables.set('movieId', suffix);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "회원 A 생성",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"Umc!1234\",\n  \"nickname\": \"{{nicknameA}}\"\n}" },
+        "url": "{{baseUrl}}/members"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('A 회원가입 201', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "회원 B 생성",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{emailB}}\",\n  \"password\": \"Umc!1234\",\n  \"nickname\": \"{{nicknameB}}\"\n}" },
+        "url": "{{baseUrl}}/members"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('B 회원가입 201', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "회원 A 로그인",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"Umc!1234\"\n}" },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('A 로그인 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.collectionVariables.set('tokenA', body.result.accessToken);",
+        "pm.test('토큰 반환', () => pm.expect(body.result.accessToken).to.be.a('string'));"
+      ] } }]
+    },
+    {
+      "name": "회원 B 로그인",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{emailB}}\",\n  \"password\": \"Umc!1234\"\n}" },
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('B 로그인 200', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('tokenB', pm.response.json().result.accessToken);"
+      ] } }]
+    },
+    {
+      "name": "A 평점 등록",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"movieId\": {{movieId}},\n  \"score\": 5,\n  \"comment\": \"인증 등록\"\n}" },
+        "url": "{{baseUrl}}/ratings"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('등록 201', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('ratingId', pm.response.json().result.ratingId);"
+      ] } }]
+    },
+    {
+      "name": "A 중복 평점 409",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"movieId\": {{movieId}},\n  \"score\": 4,\n  \"comment\": \"중복\"\n}" },
+        "url": "{{baseUrl}}/ratings"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('중복 409', () => pm.response.to.have.status(409));",
+        "pm.test('RATING409_1', () => pm.expect(pm.response.json().code).to.eql('RATING409_1'));"
+      ] } }]
+    },
+    {
+      "name": "A 본인 평점 수정",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"score\": 4,\n  \"comment\": \"본인 수정\"\n}" },
+        "url": "{{baseUrl}}/ratings/{{ratingId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('본인 수정 200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "B가 A 평점 수정 403",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenB}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"score\": 2,\n  \"comment\": \"타인 수정\"\n}" },
+        "url": "{{baseUrl}}/ratings/{{ratingId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('타인 수정 403', () => pm.response.to.have.status(403));",
+        "pm.test('RATING403_1', () => pm.expect(pm.response.json().code).to.eql('RATING403_1'));"
+      ] } }]
+    },
+    {
+      "name": "토큰 없이 수정 401",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"score\": 3,\n  \"comment\": \"토큰 없음\"\n}" },
+        "url": "{{baseUrl}}/ratings/{{ratingId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('토큰 없음 401', () => pm.response.to.have.status(401));",
+        "pm.test('AUTH401_2', () => pm.expect(pm.response.json().code).to.eql('AUTH401_2'));"
+      ] } }]
+    },
+    {
+      "name": "없는 평점 삭제 404",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+        "url": "{{baseUrl}}/ratings/999999"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('없는 평점 404', () => pm.response.to.have.status(404));",
+        "pm.test('RATING404_1', () => pm.expect(pm.response.json().code).to.eql('RATING404_1'));"
+      ] } }]
+    },
+    {
+      "name": "A 본인 평점 삭제",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+        "url": "{{baseUrl}}/ratings/{{ratingId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('본인 삭제 200', () => pm.response.to.have.status(200));",
+        "pm.test('COMMON200', () => pm.expect(pm.response.json().code).to.eql('COMMON200'));"
+      ] } }]
+    }
+  ]
+}
