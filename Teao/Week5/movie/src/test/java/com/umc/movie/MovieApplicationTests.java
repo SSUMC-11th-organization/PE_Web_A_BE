@@ -7,19 +7,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.umc.movie.dto.CreateRatingRequest;
+import com.umc.movie.dto.CreateFavoriteRequest;
+import com.umc.movie.dto.CreateMovieRecordRequest;
+import com.umc.movie.dto.FavoriteResponse;
 import com.umc.movie.dto.LoginRequest;
 import com.umc.movie.dto.LoginResponse;
 import com.umc.movie.dto.MemberResponse;
+import com.umc.movie.dto.MovieRecordResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.dto.UpdateRatingRequest;
+import com.umc.movie.entity.Favorite;
 import com.umc.movie.entity.Member;
 import com.umc.movie.entity.Rating;
 import com.umc.movie.exception.ApiException;
+import com.umc.movie.repository.FavoriteRepository;
 import com.umc.movie.repository.MemberRepository;
 import com.umc.movie.repository.RatingRepository;
 import com.umc.movie.service.AuthService;
+import com.umc.movie.service.FavoriteService;
 import com.umc.movie.service.MemberService;
+import com.umc.movie.service.MovieRecordService;
 import com.umc.movie.service.RatingService;
 import com.umc.movie.util.JwtUtil;
 import java.util.List;
@@ -31,6 +39,7 @@ class MovieApplicationTests {
 
     private final MemberRepository memberRepository = mock(MemberRepository.class);
     private final RatingRepository ratingRepository = mock(RatingRepository.class);
+    private final FavoriteRepository favoriteRepository = mock(FavoriteRepository.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 
     @Test
@@ -162,5 +171,65 @@ class MovieApplicationTests {
                 .isInstanceOfSatisfying(ApiException.class, exception ->
                         assertThat(exception.getCode()).isEqualTo("AUTH401_3")
                 );
+    }
+
+    @Test
+    void favoriteCrudUsesAuthenticatedMember() {
+        Member member = mock(Member.class);
+        Favorite favorite = mock(Favorite.class);
+        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+        when(favoriteRepository.existsByMember_MemberIdAndMovieId(1L, 550L))
+                .thenReturn(false, true);
+        when(favoriteRepository.save(org.mockito.ArgumentMatchers.any(Favorite.class)))
+                .thenReturn(favorite);
+        when(favorite.getFavoriteId()).thenReturn(3L);
+        when(favorite.getMovieId()).thenReturn(550L);
+        when(favoriteRepository.findByMember_MemberIdOrderByFavoriteIdDesc(1L))
+                .thenReturn(List.of(favorite));
+        when(favoriteRepository.findByMember_MemberIdAndMovieId(1L, 550L))
+                .thenReturn(java.util.Optional.of(favorite));
+        FavoriteService service = new FavoriteService(favoriteRepository, memberRepository);
+
+        FavoriteResponse created = service.create(1L, new CreateFavoriteRequest(550L));
+
+        assertThat(created.favoriteId()).isEqualTo(3L);
+        assertThat(service.getMyFavorites(1L)).hasSize(1);
+        assertThat(service.getStatus(1L, 550L).isFavorite()).isTrue();
+        service.delete(1L, 550L);
+        verify(favoriteRepository).delete(favorite);
+    }
+
+    @Test
+    void movieRecordSavesRatingAndFavoriteTogether() {
+        Member member = mock(Member.class);
+        Rating rating = mock(Rating.class);
+        Favorite favorite = mock(Favorite.class);
+        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+        when(ratingRepository.existsByMember_MemberIdAndMovieId(1L, 238L))
+                .thenReturn(false);
+        when(favoriteRepository.existsByMember_MemberIdAndMovieId(1L, 238L))
+                .thenReturn(false);
+        when(ratingRepository.save(org.mockito.ArgumentMatchers.any(Rating.class)))
+                .thenReturn(rating);
+        when(favoriteRepository.save(org.mockito.ArgumentMatchers.any(Favorite.class)))
+                .thenReturn(favorite);
+        when(rating.getRatingId()).thenReturn(7L);
+        when(rating.getMovieId()).thenReturn(238L);
+        when(rating.getScore()).thenReturn(5);
+        when(favorite.getFavoriteId()).thenReturn(8L);
+        when(favorite.getMovieId()).thenReturn(238L);
+        MovieRecordService service = new MovieRecordService(
+                memberRepository,
+                ratingRepository,
+                favoriteRepository
+        );
+
+        MovieRecordResponse response = service.create(
+                1L,
+                new CreateMovieRecordRequest(238L, 5, "다시 보고 싶음", true)
+        );
+
+        assertThat(response.rating().ratingId()).isEqualTo(7L);
+        assertThat(response.favorite().favoriteId()).isEqualTo(8L);
     }
 }

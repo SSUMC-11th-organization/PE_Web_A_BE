@@ -14,6 +14,9 @@
 | 평점 등록 | POST | `/ratings` |
 | 평점 수정 | PATCH | `/ratings/{ratingId}` |
 | 평점 삭제 | DELETE | `/ratings/{ratingId}` |
+| 즐겨찾기 등록·목록 조회 | POST·GET | `/favorites` |
+| 즐겨찾기 여부 조회·해제 | GET·DELETE | `/favorites/{movieId}` |
+| 영화 기록 저장 | POST | `/movie-records` |
 
 ## 실행
 
@@ -27,3 +30,5 @@ Postman에서는 `postman/week5-movie-api.postman_collection.json` 가져오기 
 6주차 저장 API는 `postman/week6-movie-api.postman_collection.json` 가져오기 후 순서대로 실행
 
 7주차 JWT 인증 API는 `postman/week7-auth-api.postman_collection.json` 가져오기 후 순서대로 실행
+
+8주차 즐겨찾기 API는 `postman/week8-favorite-api.postman_collection.json` 가져오기 후 순서대로 실행
