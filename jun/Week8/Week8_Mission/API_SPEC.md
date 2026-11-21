@@ -1,4 +1,4 @@
-# 영화 평점 서비스 API 명세 (7주차)
+# 영화 평점 서비스 API 명세 (8주차)
 
 - Base URL: `http://localhost:8080`
 - 요청/응답 형식: `application/json`
@@ -66,6 +66,11 @@
 | 평점 등록 | POST | `/ratings` | O | `201` |
 | 평점 수정 | PATCH | `/ratings/{ratingId}` | O | `200` |
 | 평점 삭제 | DELETE | `/ratings/{ratingId}` | O | `200` |
+| 즐겨찾기 등록 | POST | `/favorites` | O | `201` |
+| 내 즐겨찾기 조회 | GET | `/favorites` | O | `200` |
+| 즐겨찾기 여부 조회 | GET | `/favorites/{movieId}` | O | `200` |
+| 즐겨찾기 해제 | DELETE | `/favorites/{movieId}` | O | `200` |
+| 영화 기록 저장 (평점 + 즐겨찾기) | POST | `/movie-records` | O | `201` |
 
 > 6주차에서 `/members/{memberId}/ratings` 아래에 있던 평점 등록/수정/삭제는 `memberId`가 사라지고 `/ratings`로 옮겨졌습니다.
 > 평점 삭제는 공통 응답 형식을 지키기 위해 `204`에서 `200`(`result: null`)으로 바뀌었습니다.
@@ -84,12 +89,14 @@
 | 403 | RATING403_1 | 본인이 작성한 평점만 수정하거나 삭제할 수 있습니다. | 다른 회원의 평점 수정/삭제 |
 | 404 | MEMBER404_1 | 해당 회원을 찾을 수 없습니다. | 없는 `memberId` (토큰의 회원이 삭제된 경우 포함) |
 | 404 | RATING404_1 | 해당 평점을 찾을 수 없습니다. | 없는 `ratingId` |
+| 404 | FAVORITE404_1 | 즐겨찾기한 영화를 찾을 수 없습니다. | 즐겨찾기하지 않은 영화를 해제 |
 | 404 | COMMON4041 | 존재하지 않는 API입니다. | 없는 URL |
 | 405 | COMMON4051 | 지원하지 않는 HTTP 메서드입니다. | 예: `PUT /members` |
 | 409 | MEMBER4091 | 이미 사용 중인 이메일입니다. | 이메일 중복 |
 | 409 | MEMBER4092 | 이미 사용 중인 닉네임입니다. | 회원가입 시 닉네임 중복 |
 | 409 | MEMBER409_1 | 이미 사용 중인 닉네임입니다. | 내 정보 수정 시 다른 회원과 닉네임 중복 |
-| 409 | RATING409_1 | 이미 이 영화에 평점을 남기셨습니다. | 같은 회원이 같은 영화에 중복 등록 |
+| 409 | RATING409_1 | 이미 이 영화에 평점을 남기셨습니다. | 같은 회원이 같은 영화에 중복 등록 (영화 기록 저장 포함) |
+| 409 | FAVORITE409_1 | 이미 이 영화를 즐겨찾기하셨습니다. | 같은 회원이 같은 영화를 중복 즐겨찾기 (영화 기록 저장 포함) |
 | 409 | COMMON4091 | 이미 존재하는 데이터입니다. | 사전 중복 체크를 통과했지만 DB UNIQUE 제약에 걸린 경우 (동시 요청) |
 | 500 | COMMON5001 | 서버 내부 오류가 발생했습니다. | 예상하지 못한 오류 |
 
@@ -391,3 +398,139 @@ Errors: `400 COMMON4001` / `401 AUTH401_2~4` / `404 MEMBER404_1` / `409 MEMBER40
 ### Errors
 
 `401 AUTH401_2~4` / `403 RATING403_1` / `404 RATING404_1`
+
+---
+
+## 10. 즐겨찾기 등록
+
+`POST /favorites` · Header `Authorization: Bearer {accessToken}`
+
+### Request Body
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| movieId | number | O | TMDB 영화 ID, 양수 |
+
+```json
+{ "movieId": 550 }
+```
+
+### Response `201 Created`
+
+```json
+{
+  "isSuccess": true,
+  "code": "COMMON201",
+  "message": "즐겨찾기를 등록했습니다.",
+  "result": { "favoriteId": 1, "movieId": 550, "createdAt": "2026-11-21T21:00:00" }
+}
+```
+
+### Errors
+
+`400 COMMON4001` / `401 AUTH401_2~4` / `404 MEMBER404_1` / `409 FAVORITE409_1` / `409 COMMON4091`(동시 요청)
+
+---
+
+## 11. 내 즐겨찾기 조회
+
+`GET /favorites` · Header `Authorization: Bearer {accessToken}`
+
+최신 등록 순(`favoriteId` 내림차순). 비어 있으면 `200` + `[]`.
+
+```json
+{
+  "isSuccess": true,
+  "code": "COMMON200",
+  "message": "내 즐겨찾기 목록을 조회했습니다.",
+  "result": [
+    { "favoriteId": 2, "movieId": 238, "createdAt": "2026-11-21T21:10:00" },
+    { "favoriteId": 1, "movieId": 550, "createdAt": "2026-11-21T21:00:00" }
+  ]
+}
+```
+
+### Errors
+
+`401 AUTH401_2~4`
+
+---
+
+## 12. 특정 영화 즐겨찾기 여부 조회
+
+`GET /favorites/{movieId}` · Header `Authorization: Bearer {accessToken}`
+
+즐겨찾기하지 않은 것도 정상 상태이므로 `404`가 아니라 `200` + `isFavorite: false`.
+
+```json
+{
+  "isSuccess": true,
+  "code": "COMMON200",
+  "message": "즐겨찾기 여부를 조회했습니다.",
+  "result": { "isFavorite": true }
+}
+```
+
+### Errors
+
+`400 COMMON4003` / `401 AUTH401_2~4`
+
+---
+
+## 13. 즐겨찾기 해제
+
+`DELETE /favorites/{movieId}` · Header `Authorization: Bearer {accessToken}`
+
+```json
+{
+  "isSuccess": true,
+  "code": "COMMON200",
+  "message": "즐겨찾기를 해제했습니다.",
+  "result": null
+}
+```
+
+### Errors
+
+`400 COMMON4003` / `401 AUTH401_2~4` / `404 FAVORITE404_1`
+
+---
+
+## 14. 영화 기록 저장 (평점 + 즐겨찾기, 트랜잭션)
+
+`POST /movie-records` · Header `Authorization: Bearer {accessToken}`
+
+평점과 즐겨찾기를 **하나의 트랜잭션**으로 저장합니다. 둘 중 하나라도 실패하면 모두 저장되지 않습니다(rollback).
+
+### Request Body
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| movieId | number | O | 양수 |
+| score | number | O | 1~5 정수 |
+| comment | string | X | 500자 이하 |
+| addToFavorites | boolean | O | `true`면 즐겨찾기도 저장, `false`면 평점만 |
+
+```json
+{ "movieId": 238, "score": 5, "comment": "다시 보고 싶은 영화입니다.", "addToFavorites": true }
+```
+
+### Response `201 Created`
+
+`addToFavorites: false`이면 `favorite`는 `null`입니다.
+
+```json
+{
+  "isSuccess": true,
+  "code": "COMMON201",
+  "message": "영화 기록을 저장했습니다.",
+  "result": {
+    "rating": { "ratingId": 3, "movieId": 238, "score": 5, "comment": "다시 보고 싶은 영화입니다.", "createdAt": "...", "updatedAt": "..." },
+    "favorite": { "favoriteId": 2, "movieId": 238, "createdAt": "..." }
+  }
+}
+```
+
+### Errors
+
+`400 COMMON4001` / `401 AUTH401_2~4` / `404 MEMBER404_1` / `409 RATING409_1` / `409 FAVORITE409_1` / `409 COMMON4091`
